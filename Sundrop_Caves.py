@@ -85,6 +85,7 @@ def initialize_game(game_map, fog, player):
     player['steps'] = 0
     player['turns'] = TURNS_PER_DAY
     player['nextDay'] = True
+    player['portalPosition'] = [0, 0]
 
     fog = clear_fog(fog, player)
     return game_map, fog
@@ -104,12 +105,31 @@ def draw_map(fog, player):
     print()
 
 # This function draws the 3x3 viewport
-def draw_view(game_map, fog, player):
-    return
+def draw_view(fog, player):
+    print(f"DAY {player['day']}")
+
+def pickaxe_level(level):
+    if level == 1:
+        return "bronze"
+    elif level == 2:
+        return "silver"
+    elif level == 3:
+        return "gold"
 
 # This function shows the information for the player
 def show_information(player):
-    return
+    print()
+    print("----- Player Information -----")
+    print(f"Name: {player['name']}")
+    print(f"Portal position: ({player['portalPosition'][0]}, {player['portalPosition'][1]})")
+    print(f"Pickaxe level: {player['pickaxe']} ({pickaxe_level(player['pickaxe'])})")
+    print(f"------------------------------")
+    print(f"Load: {player['copper'] + player['silver'] + player['gold']} / {player['backpack']}")
+    print("------------------------------")
+    print(f"GP: {player['GP']}")
+    print(f"Steps taken: {player['steps']}")
+    print("------------------------------")
+
 
 # This function saves the game
 def save_game(game_map, fog, player):
@@ -134,8 +154,18 @@ def upgrade_backpack():
     else:
         print("You do not have enough GP to purchase this...")
 
-def pickaxe_upgrade():
-    pass
+def upgrade_pickaxe():
+    if player['GP'] >= pickaxe_price[player['pickaxe']-1]:
+        player['GP'] -= pickaxe_price[player['pickaxe']-1]
+        player['pickaxe'] += 1
+        print(f"Congratulations! You can now mine {pickaxe_level(player['pickaxe'])}")
+    else:
+        print("You do not have enough GP to do this...")
+
+def enter_mine():
+    while True:
+        print(f"Day {player['day']}")
+        
 
 def show_main_menu():
     print()
@@ -160,7 +190,8 @@ def show_town_menu():
 
 def show_buy_menu():
     print("----------------------- Shop Menu -------------------------")
-    pickaxe_upgrade()
+    if player['pickaxe'] != 3:
+        print(f"(P)ickaxe upgrade to Level {player['pickaxe']+1} to mine {pickaxe_level(player['pickaxe']+1)} ore for {pickaxe_price[player['pickaxe']-1]} GP")
     print(f"(B)ackpack upgrade to carry {player['backpack']+2} items for {(player['backpack']+2)*2} GP")
     print("(L)eave shop")
     print("-----------------------------------------------------------")
@@ -197,11 +228,20 @@ if choice.lower() == "n":
                 choice = input("Your choice? ")
                 if choice.lower() == "b":
                     upgrade_backpack()
+                elif choice.lower() == "p":
+                    upgrade_pickaxe()
                 elif choice.lower() == "l":
                     break
             #todo
         if choice.lower() == "i":
-            continue
+            show_information(player)
             #todo
         if choice.lower() == "m":
             draw_map(fog, player)
+        if choice.lower() == "e":
+            print("---------------------------------------------------")
+            print(f"{f'DAY {player['day']}':^51}")
+            print("---------------------------------------------------")
+            enter_mine()
+        if choice.lower() == "money":
+            player['GP'] += 300
