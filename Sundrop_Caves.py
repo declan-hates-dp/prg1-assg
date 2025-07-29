@@ -36,11 +36,12 @@ def load_map(filename, map_struct):
     MAP_HEIGHT = len(map_struct)
 
     map_file.close()
+    return map_struct
 
 # This function clears the fog of war at the 3x3 square around the player
 def clear_fog(fog, player):
-    x = player['position'][0]
-    y = player['position'][1]
+    x = player['x']
+    y = player['y']
     if x != 0:
         fog[y][x-1] = game_map[y][x-1]
         if y != 0:
@@ -58,33 +59,49 @@ def clear_fog(fog, player):
     if y != len(fog):
         fog[y+1][x] = game_map[y+1][x]
     fog[y][x] = game_map[y][x]
+    return fog
 
 
 def initialize_game(game_map, fog, player):
     # initialize map
-    load_map("level1.txt", game_map)
+    game_map = load_map("level1.txt", game_map)
 
     #Initialize fog
-    fog = [["?"]*len(game_map[0])]*len(game_map)
+    for x in range(len(game_map)):
+        fog.append(["?"]*len(game_map[0]))
 
     # TODO: initialize player
     #   You will probably add other entries into the player dictionary
+    player['name'] = ""
     player['x'] = 0
     player['y'] = 0
     player['copper'] = 0
     player['silver'] = 0
     player['gold'] = 0
+    player['pickaxe'] = 1
+    player['backpack'] = 10
     player['GP'] = 0
     player['day'] = 0
     player['steps'] = 0
     player['turns'] = TURNS_PER_DAY
-    player['position'] = [0, 0] #x, y
+    player['nextDay'] = True
 
-    clear_fog(fog, player)
+    fog = clear_fog(fog, player)
+    return game_map, fog
+
     
 # This function draws the entire map, covered by the fof
-def draw_map(game_map, fog, player):
-    return
+def draw_map(fog, player):
+    print()
+    fog[player['y']][player['x']] = "M"
+    print("+------------------------------+")
+    for x in fog:
+        print("|", end="")
+        for i in x:
+            print(i, end="")
+        print("|")
+    print("+------------------------------+")
+    print()
 
 # This function draws the 3x3 viewport
 def draw_view(game_map, fog, player):
@@ -107,6 +124,18 @@ def load_game(game_map, fog, player):
     # load fog
     # load player
     return
+
+def upgrade_backpack():
+    global player
+    if player['GP'] >= (player['backpack']+2)*2:
+        player['backpack'] += 2
+        player['GP'] -= player['backpack']*2
+        print(f"Congratulations! You can now carry {player['backpack']} items!")
+    else:
+        print("You do not have enough GP to purchase this...")
+
+def pickaxe_upgrade():
+    pass
 
 def show_main_menu():
     print()
@@ -131,14 +160,13 @@ def show_town_menu():
 
 def show_buy_menu():
     print("----------------------- Shop Menu -------------------------")
-    print("(P)ickaxe upgrade to Level 2 to mine silver ore for 50 GP")
-    print("(B)ackpack upgrade to carry 12 items for 20 GP")
+    pickaxe_upgrade()
+    print(f"(B)ackpack upgrade to carry {player['backpack']+2} items for {(player['backpack']+2)*2} GP")
     print("(L)eave shop")
     print("-----------------------------------------------------------")
     print(f"GP: {player['GP']}")
     print("-----------------------------------------------------------")
             
-
 #--------------------------- MAIN GAME ---------------------------
 game_state = 'main'
 print("---------------- Welcome to Sundrop Caves! ----------------")
@@ -153,12 +181,27 @@ print("-----------------------------------------------------------")
 show_main_menu()
 choice = input("Your choice? ")
 if choice.lower() == "n":
-    initialize_game(game_map,fog,player)
+    game_map, fog = initialize_game(game_map,fog,player)
+    player['name'] = input("Greetings, miner! What is your name? ")
+    print(f"Pleased to meet you, {player['name']}, Welcome to Sundrop Town!")
+    print()
     while True:
-        player['day'] += 1
+        if player['nextDay'] == True:
+            player['nextDay'] = False
+            player['day'] += 1
         show_town_menu()
         choice = input("Your choice? ")
         if choice.lower() == "b":
-            show_buy_menu()
-        
-    
+            while True:
+                show_buy_menu()
+                choice = input("Your choice? ")
+                if choice.lower() == "b":
+                    upgrade_backpack()
+                elif choice.lower() == "l":
+                    break
+            #todo
+        if choice.lower() == "i":
+            continue
+            #todo
+        if choice.lower() == "m":
+            draw_map(fog, player)
