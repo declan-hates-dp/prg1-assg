@@ -29,6 +29,8 @@ def load_map(filename, map_struct):
     map_struct.clear()
     
     # TODO: Add your map loading code here
+    for x in map_file.read().split("\n"):
+        map_struct.append(list(x))
     
     MAP_WIDTH = len(map_struct[0])
     MAP_HEIGHT = len(map_struct)
@@ -113,10 +115,13 @@ print("---------------- Welcome to Sundrop Caves! ----------------")
 print("You spent all your money to get the deed to a mine, a small")
 print("  backpack, a simple pickaxe and a magical portal stone.")
 print()
-print("How quickly can you get the 1000 GP you need to retire")
+print("How quickly can you get the 500 GP you need to retire")
 print("  and live happily ever after?")
 print("-----------------------------------------------------------")
 
-# TODO: The game!
-    
+
+show_main_menu()
+choice = input("Your choice? ")
+if choice.lower() == "n":
+    initialize_game(game_map,fog,player)
     
