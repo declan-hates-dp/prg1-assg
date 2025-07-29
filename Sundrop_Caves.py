@@ -28,7 +28,7 @@ def load_map(filename, map_struct):
     
     map_struct.clear()
     
-    # TODO: Add your map loading code here
+    #Map loading code
     for x in map_file.read().split("\n"):
         map_struct.append(list(x))
     
@@ -39,14 +39,34 @@ def load_map(filename, map_struct):
 
 # This function clears the fog of war at the 3x3 square around the player
 def clear_fog(fog, player):
-    return
+    x = player['position'][0]
+    y = player['position'][1]
+    if x != 0:
+        fog[y][x-1] = game_map[y][x-1]
+        if y != 0:
+            fog[y-1][x-1] = game_map[y-1][x-1]
+        if y != len(fog)-1:
+            fog[y+1][x-1] = game_map[y-1][x-1]
+    if x != len(fog[0])-1:
+        fog[y][x+1] = game_map[y][x+1]
+        if y != len(fog)-1:
+            fog[y+1][x+1] = game_map[y+1][x+1]
+        if y != 0:
+            fog[y-1][x+1] = game_map[y-1][x+1]
+    if y != 0:
+        fog[y-1][x] = game_map[y-1][x]
+    if y != len(fog):
+        fog[y+1][x] = game_map[y+1][x]
+    fog[y][x] = game_map[y][x]
+
 
 def initialize_game(game_map, fog, player):
     # initialize map
     load_map("level1.txt", game_map)
 
-    # TODO: initialize fog
-    
+    #Initialize fog
+    fog = [["?"]*len(game_map[0])]*len(game_map)
+
     # TODO: initialize player
     #   You will probably add other entries into the player dictionary
     player['x'] = 0
@@ -58,6 +78,7 @@ def initialize_game(game_map, fog, player):
     player['day'] = 0
     player['steps'] = 0
     player['turns'] = TURNS_PER_DAY
+    player['position'] = [0, 0] #x, y
 
     clear_fog(fog, player)
     
@@ -98,7 +119,7 @@ def show_main_menu():
 
 def show_town_menu():
     print()
-    # TODO: Show Day
+    print(f"DAY {player['day']}")
     print("----- Sundrop Town -----")
     print("(B)uy stuff")
     print("See Player (I)nformation")
@@ -107,6 +128,15 @@ def show_town_menu():
     print("Sa(V)e game")
     print("(Q)uit to main menu")
     print("------------------------")
+
+def show_buy_menu():
+    print("----------------------- Shop Menu -------------------------")
+    print("(P)ickaxe upgrade to Level 2 to mine silver ore for 50 GP")
+    print("(B)ackpack upgrade to carry 12 items for 20 GP")
+    print("(L)eave shop")
+    print("-----------------------------------------------------------")
+    print(f"GP: {player['GP']}")
+    print("-----------------------------------------------------------")
             
 
 #--------------------------- MAIN GAME ---------------------------
@@ -124,4 +154,11 @@ show_main_menu()
 choice = input("Your choice? ")
 if choice.lower() == "n":
     initialize_game(game_map,fog,player)
+    while True:
+        player['day'] += 1
+        show_town_menu()
+        choice = input("Your choice? ")
+        if choice.lower() == "b":
+            show_buy_menu()
+        
     
