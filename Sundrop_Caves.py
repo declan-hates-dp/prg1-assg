@@ -162,10 +162,70 @@ def upgrade_pickaxe():
     else:
         print("You do not have enough GP to do this...")
 
+def generate_view(game_map, player):
+    view_map = [[' ',' ',' '],
+                [' ','M',' '],
+                [' ',' ',' ']]
+    x, y = player['x'], player['y']
+    if y == 0:
+        view_map[0][0] = "#"
+        view_map[0][1] = "#"
+        view_map[0][2] = "#"
+    if y == len(game_map) - 1:
+        view_map[2][0] = "#"
+        view_map[2][1] = "#"
+        view_map[2][2] = "#"
+    if x == 0:
+        view_map[0][0] = "#"
+        view_map[1][0] = "#"
+        view_map[2][0] = "#"
+    if x == len(game_map[0]) - 1:
+        view_map[0][2] = "#"
+        view_map[1][2] = "#"
+        view_map[2][2] = "#"
+    for row in range(len(view_map)):
+        for i in range(len(view_map[row])):
+            if view_map[row][i] != '#' and view_map[row][i] != 'M':
+                view_map[row][i] = game_map[y - 1 + row][x - 1 + i]
+    return view_map
+
+def draw_view(game_map, player):
+    x, y = player['x'], player['y']
+    view = generate_view(game_map, player)
+    print("+---+")
+    for row in view:
+        print("|" + ''.join(row) + "|")
+    print("+---+")
+
 def enter_mine():
+    if player['portalPosition'] != [0, 0]:
+        player['x'], player['y'] = player['portalPosition']
+    else:
+        player['x'], player['y'] = 0, 0
+
+    player['turns'] = TURNS_PER_DAY
     while True:
-        print(f"Day {player['day']}")
-        
+        print(f"DAY {player['day']}")
+        draw_view(game_map, player)
+        print(f"Turns left: {player['turns']} Load: {player['copper'] + player['silver'] + player['gold']} / {player['backpack']} Steps: {player['steps']}")
+        print("(WASD) to move")
+        print("(M)ap, (I)nformation, (P)ortal, (Q)uit to main menu")
+        action = input("Action? ").lower()
+
+        if action == "q":
+            break
+        elif action == "m":
+            draw_map(fog, player)
+        elif action == "i":
+            show_information(player)
+        elif action == "p":
+            # Portal logic here
+            pass
+        elif action in "wasd":
+            # Movement logic here
+            pass
+        else:
+            print("Invalid action.")
 
 def show_main_menu():
     print()
