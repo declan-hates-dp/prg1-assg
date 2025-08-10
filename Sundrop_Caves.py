@@ -19,6 +19,11 @@ prices['copper'] = (1, 3)
 prices['silver'] = (5, 8)
 prices['gold'] = (10, 18)
 
+pieces = {}
+pieces['copper'] = (1,5)
+pieces['silver'] = (1,3)
+pieces['gold'] = (1,2)
+
 # This function loads a map structure (a nested list) from a file
 # It also updates MAP_WIDTH and MAP_HEIGHT
 def load_map(filename, map_struct):
@@ -203,16 +208,27 @@ def move_player(direction):
 
 def check_ore(direction):
     x, y = player['x'], player['y']
-    if direction == 'up' and fog[y-1][x] != ' ':
+    if direction == 'up' and fog[y-1][x] != ' ' and fog[y-1][x] != 'T':
         return fog[y-1][x]
-    elif direction == 'down' and fog[y+1][x] != ' ':
+    elif direction == 'down' and fog[y+1][x] != ' ' and fog[y+1][x] != 'T':
         return fog[y+1][x]
-    elif direction == 'left' and fog[y][x-1] != ' ':
+    elif direction == 'left' and fog[y][x-1] != ' ' and fog[y][x-1] != 'T':
         return fog[y][x-1]
-    elif direction == 'right' and fog[y][x+1] != ' ':
+    elif direction == 'right' and fog[y][x+1] != ' ' and fog[y][x+1] != 'T':
         return fog[y][x+1]
     else:
         return True
+
+def mine_ore(ore_type):
+    x,y = player['x'], player['y']
+    mined = randint(pieces[mineral_names[ore_type]][0], pieces[mineral_names[ore_type]][1])
+    player[mineral_names[ore_type]] += mined
+    print(f"You mined {mined} piece(s) of {mineral_names[ore_type]}")
+    if player['copper'] + player['silver'] + player['gold'] > player['backpack']:
+        excess = (player['copper'] + player['silver'] + player['gold']) - player['backpack']
+        print(f"...but you can only carry {mined-excess} more piece(s)!")
+        player[mineral_names[ore_type]] -= excess
+    game_map[y][x] = ' '
 
 def enter_mine():
     if player['portalPosition'] != [0, 0]:
@@ -228,6 +244,8 @@ def enter_mine():
         print("(WASD) to move")
         print("(M)ap, (I)nformation, (P)ortal, (Q)uit to main menu")
         action = input("Action? ").lower()
+        print()
+        print("---------------------------------------------------")
 
         if action == "q":
             break
@@ -240,25 +258,37 @@ def enter_mine():
             pass
         elif action in "wasd":
             if action == "w" and player['y'] > 0:
-                if check_ore('up') != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
+                ore = check_ore('up')
+                if ore != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
                     print('Your backpack is full')
                 else:
                     move_player('up')
+                    if ore in mineral_names:
+                        mine_ore(ore)
             elif action == "s" and player['y'] < len(game_map) - 1:
-                if check_ore('down') != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
+                ore = check_ore('down')
+                if ore != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
                     print('Your backpack is full')
                 else:
                     move_player('down')
+                    if ore in mineral_names:
+                        mine_ore(ore)
             elif action == "a" and player['x'] > 0:
-                if check_ore('left') != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
+                ore = check_ore('left')
+                if ore != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
                     print('Your backpack is full')
                 else:
                     move_player('left')
+                    if ore in mineral_names:
+                        mine_ore(ore)
             elif action == "d" and player['x'] < len(game_map[0]) - 1:
-                if check_ore('right') != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
+                ore = check_ore('right')
+                if ore != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
                     print('Your backpack is full')
                 else:
                     move_player('right')
+                    if ore in mineral_names:
+                        mine_ore(ore)
             else:
                 print("You can't move in that direction.")
         else:
