@@ -40,25 +40,9 @@ def load_map(filename, map_struct):
 
 # This function clears the fog of war at the 3x3 square around the player
 def clear_fog(fog, player):
-    x = player['x']
-    y = player['y']
-    if x != 0:
-        fog[y][x-1] = game_map[y][x-1]
-        if y != 0:
-            fog[y-1][x-1] = game_map[y-1][x-1]
-        if y != len(fog)-1:
-            fog[y+1][x-1] = game_map[y-1][x-1]
-    if x != len(fog[0])-1:
-        fog[y][x+1] = game_map[y][x+1]
-        if y != len(fog)-1:
-            fog[y+1][x+1] = game_map[y+1][x+1]
-        if y != 0:
-            fog[y-1][x+1] = game_map[y-1][x+1]
-    if y != 0:
-        fog[y-1][x] = game_map[y-1][x]
-    if y != len(fog):
-        fog[y+1][x] = game_map[y+1][x]
-    fog[y][x] = game_map[y][x]
+    for i in range(max(0, player['y'] - 1), min(len(fog), player['y'] + 2)):
+        for j in range(max(0, player['x'] - 1), min(len(fog[0]), player['x'] + 2)):
+            fog[i][j] = game_map[i][j]
     return fog
 
 
@@ -189,13 +173,46 @@ def generate_view(game_map, player):
                 view_map[row][i] = game_map[y - 1 + row][x - 1 + i]
     return view_map
 
-def draw_view(game_map, player):
+def draw_view(fog, player):
     x, y = player['x'], player['y']
-    view = generate_view(game_map, player)
+    view = generate_view(fog, player)
     print("+---+")
     for row in view:
         print("|" + ''.join(row) + "|")
     print("+---+")
+
+def move_player(direction):
+    x,y = player['x'], player['y']
+    if direction == 'up':
+        fog[y][x] = ' '
+        fog[y-1][x] = 'M'
+        player['y'] -= 1
+    elif direction == 'down':
+        fog[y][x] = ' '
+        fog[y+1][x] = 'M'
+        player['y'] += 1
+    elif direction == 'left':
+        fog[y][x] = ' '
+        fog[y][x-1] = 'M'
+        player['x'] -= 1
+    elif direction == 'right':
+        fog[y][x] = ' '
+        fog[y][x+1] = 'M'
+        player['x'] += 1
+    clear_fog(fog, player)
+
+def check_ore(direction):
+    x, y = player['x'], player['y']
+    if direction == 'up' and fog[y-1][x] != ' ':
+        return fog[y-1][x]
+    elif direction == 'down' and fog[y+1][x] != ' ':
+        return fog[y+1][x]
+    elif direction == 'left' and fog[y][x-1] != ' ':
+        return fog[y][x-1]
+    elif direction == 'right' and fog[y][x+1] != ' ':
+        return fog[y][x+1]
+    else:
+        return True
 
 def enter_mine():
     if player['portalPosition'] != [0, 0]:
@@ -206,7 +223,7 @@ def enter_mine():
     player['turns'] = TURNS_PER_DAY
     while True:
         print(f"DAY {player['day']}")
-        draw_view(game_map, player)
+        draw_view(fog, player)
         print(f"Turns left: {player['turns']} Load: {player['copper'] + player['silver'] + player['gold']} / {player['backpack']} Steps: {player['steps']}")
         print("(WASD) to move")
         print("(M)ap, (I)nformation, (P)ortal, (Q)uit to main menu")
@@ -222,8 +239,28 @@ def enter_mine():
             # Portal logic here
             pass
         elif action in "wasd":
-            # Movement logic here
-            pass
+            if action == "w" and player['y'] > 0:
+                if check_ore('up') != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
+                    print('Your backpack is full')
+                else:
+                    move_player('up')
+            elif action == "s" and player['y'] < len(game_map) - 1:
+                if check_ore('down') != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
+                    print('Your backpack is full')
+                else:
+                    move_player('down')
+            elif action == "a" and player['x'] > 0:
+                if check_ore('left') != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
+                    print('Your backpack is full')
+                else:
+                    move_player('left')
+            elif action == "d" and player['x'] < len(game_map[0]) - 1:
+                if check_ore('right') != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
+                    print('Your backpack is full')
+                else:
+                    move_player('right')
+            else:
+                print("You can't move in that direction.")
         else:
             print("Invalid action.")
 
