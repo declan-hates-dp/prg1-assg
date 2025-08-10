@@ -123,17 +123,24 @@ def show_information(player):
 
 # This function saves the game
 def save_game(game_map, fog, player):
-    # save map
-    # save fog
-    # save player
-    return
-        
+    with open("savefile/game_map.txt", "w") as f:
+        for row in game_map:
+            f.write("".join(row) + "\n")
+    with open("savefile/fog_map.txt", "w") as f:
+        for row in fog:
+            f.write("".join(row) + "\n")
+    with open("savefile/player_data.txt", "w") as f:
+        f.write(str(player))
+
 # This function loads the game
 def load_game(game_map, fog, player):
-    # load map
-    # load fog
-    # load player
-    return
+    with open("savefile/game_map.txt", "r") as f:
+        game_map = f.read().strip().split("\n")
+    with open("savefile/fog_map.txt", "r") as f:
+        fog = f.read().strip().split("\n")
+    with open("savefile/player_data.txt", "r") as f:
+        player = eval(f.read())
+    return game_map, fog, player
 
 def show_high_scores():
     highscores = []
@@ -414,29 +421,30 @@ def show_town_menu():
                 if choice.lower() == "b":
                     upgrade_backpack()
                 elif choice.lower() == "p":
-                    upgrade_pickaxe()
+                    if player['pickaxe'] < 3:
+                        upgrade_pickaxe()
+                    else:
+                        print("Your pickaxe is already upgraded to the max!")
                 elif choice.lower() == "l":
                     break
-        if choice.lower() == "i":
+                else:
+                    print("Please select a valid option")
+        elif choice.lower() == "i":
             show_information(player)
-        if choice.lower() == "m":
+        elif choice.lower() == "m":
             draw_map(fog, player)
-        if choice.lower() == "e":
+        elif choice.lower() == "e":
             print("---------------------------------------------------")
             print(f"{f'DAY {player['day']}':^51}")
             print("---------------------------------------------------")
             enter_mine()
-        if choice.lower() == "v":
-            with open("savefile/game_map.txt", "w") as f:
-                for row in game_map:
-                    f.write("".join(row) + "\n")
-            with open("savefile/fog_map.txt", "w") as f:
-                for row in fog:
-                    f.write("".join(row) + "\n")
-            with open("savefile/player_data.txt", "w") as f:
-                f.write(str(player))
-        if choice.lower() == "q":
+        elif choice.lower() == "v":
+            save_game(game_map, fog, player)
+        elif choice.lower() == "q":
             break
+        else:
+            print("Please select a valid option")
+        
 
 def show_buy_menu():
     print("----------------------- Shop Menu -------------------------")
@@ -460,11 +468,16 @@ def main_menu():
             print()
             enter_town()
         elif choice.lower() == "l":
-            break
+            game_map, fog, player = load_game(game_map, fog, player)
+            print(f"Welcome back, {player['name']}!")
+            print()
+            enter_town()
         elif choice.lower() == "h":
             show_high_scores()
         elif choice.lower() == "q":
             break
+        else:
+            print("Please select a valid option")
 
 #--------------------------- MAIN GAME ---------------------------
 game_state = 'main'
