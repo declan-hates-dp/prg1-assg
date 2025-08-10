@@ -135,6 +135,21 @@ def load_game(game_map, fog, player):
     # load player
     return
 
+def show_high_scores():
+    highscores = []
+    temp = []
+    with open('highscores.txt', 'r') as f:
+        for x in f.read().strip().split("\n"):
+            highscores.append(x.split())
+        print("----------------------------")
+        print("Top 5 High Scores:")
+        highscores.sort(key=lambda x: (int(x[2]), int(x[3]), -int(x[1])))
+        print("Rank | Name       | GP   | Days | Steps")
+        print("----------------------------------------")
+        for num, x in enumerate(highscores[:5], 1):
+            print(f"{num:>4} | {x[0]:<10} | {x[1]:>4} | {x[2]:>4} | {x[3]:>5}")
+    print("----------------------------------------")
+
 def upgrade_backpack():
     global player
     if player['GP'] >= (player['backpack']+2)*2:
@@ -252,9 +267,20 @@ def sell_ores(player):
         player['copper'], player['silver'], player['gold'] = 0, 0, 0
         player['GP'] += revenue
         print(f"You now have {player['GP']} GP!")
+        if player['GP'] >= WIN_GP:
+            win()
     else:
         print("You have nothing to sell...")
     
+def win():
+    print("-------------------------------------------------------------")
+    print(f"Woo-hoo! Well done, {player['name']}, you have {player['GP']} GP!")
+    print("You now have enough to retire and play video games every day.")
+    print(f"And it only took you {player['day']} days and {player['steps']} steps!")
+    print("-------------------------------------------------------------")
+    with open("highscores.txt", "a") as f:
+         f.write(f"{player['name']} {player['GP']} {player['day']} {player['steps']}\n")
+    main_menu()
 
 def mine_ore(ore_type):
     x,y = player['x'], player['y']
@@ -340,6 +366,8 @@ def enter_mine():
                 enter_town()
         else:
             print("Invalid action.")
+    print("You are exhausted.")
+    enter_portal(player)
 
 def show_player_information(player):
     print()
@@ -362,7 +390,7 @@ def show_main_menu():
     print("--- Main Menu ----")
     print("(N)ew game")
     print("(L)oad saved game")
-#    print("(H)igh scores")
+    print("(H)igh scores")
     print("(Q)uit")
     print("------------------")
 
@@ -398,8 +426,17 @@ def show_town_menu():
             print(f"{f'DAY {player['day']}':^51}")
             print("---------------------------------------------------")
             enter_mine()
-        if choice.lower() == "money":
-            player['GP'] += 300
+        if choice.lower() == "v":
+            with open("savefile/game_map.txt", "w") as f:
+                for row in game_map:
+                    f.write("".join(row) + "\n")
+            with open("savefile/fog_map.txt", "w") as f:
+                for row in fog:
+                    f.write("".join(row) + "\n")
+            with open("savefile/player_data.txt", "w") as f:
+                f.write(str(player))
+        if choice.lower() == "q":
+            break
 
 def show_buy_menu():
     print("----------------------- Shop Menu -------------------------")
@@ -410,7 +447,25 @@ def show_buy_menu():
     print("-----------------------------------------------------------")
     print(f"GP: {player['GP']}")
     print("-----------------------------------------------------------")
-            
+
+def main_menu():
+    global game_map, fog, player
+    while True:
+        show_main_menu()
+        choice = input("Your choice? ")
+        if choice.lower() == "n":
+            game_map, fog = initialize_game(game_map,fog,player)
+            player['name'] = input("Greetings, miner! What is your name? ")
+            print(f"Pleased to meet you, {player['name']}, Welcome to Sundrop Town!")
+            print()
+            enter_town()
+        elif choice.lower() == "l":
+            break
+        elif choice.lower() == "h":
+            show_high_scores()
+        elif choice.lower() == "q":
+            break
+
 #--------------------------- MAIN GAME ---------------------------
 game_state = 'main'
 print("---------------- Welcome to Sundrop Caves! ----------------")
@@ -420,13 +475,4 @@ print()
 print("How quickly can you get the 500 GP you need to retire")
 print("  and live happily ever after?")
 print("-----------------------------------------------------------")
-
-
-show_main_menu()
-choice = input("Your choice? ")
-if choice.lower() == "n":
-    game_map, fog = initialize_game(game_map,fog,player)
-    player['name'] = input("Greetings, miner! What is your name? ")
-    print(f"Pleased to meet you, {player['name']}, Welcome to Sundrop Town!")
-    print()
-    enter_town()
+main_menu()

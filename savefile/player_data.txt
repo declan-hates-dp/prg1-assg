@@ -1,0 +1,1 @@
+{'name': 'test', 'x': 4, 'y': 6, 'copper': 0, 'silver': 0, 'gold': 0, 'pickaxe': 1, 'backpack': 10, 'GP': 30, 'day': 2, 'steps': 10, 'turns': 10, 'nextDay': False, 'portalPosition': [4, 6], 'enteredMine': True}
