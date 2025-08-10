@@ -75,6 +75,7 @@ def initialize_game(game_map, fog, player):
     player['turns'] = TURNS_PER_DAY
     player['nextDay'] = True
     player['portalPosition'] = [0, 0]
+    player['enteredMine'] = False
 
     fog = clear_fog(fog, player)
     return game_map, fog
@@ -219,6 +220,42 @@ def check_ore(direction):
     else:
         return True
 
+def enter_town():
+    if player['nextDay'] == True:
+        player['nextDay'] = False
+        player['day'] += 1
+    if player['enteredMine']:
+        print("You head back to town.")
+        sell_ores(player)
+    show_town_menu()
+
+def enter_portal(player):
+    player['portalPosition'] = [player['x'], player['y']]
+    print("-----------------------------------------------------")
+    print("You place your portal stone here and zap back to town.")
+    enter_town()
+
+def sell_ores(player):
+    revenue = 0
+    copper, silver, gold = False, False, False
+    if player['copper'] > 0:
+        copper = True
+        revenue += player['copper'] * randint(prices['copper'][0], prices['copper'][1])
+    if player['silver'] > 0:
+        silver = True
+        revenue += player['silver'] * randint(prices['silver'][0], prices['silver'][1])
+    if player['gold'] > 0:
+        gold = True
+        revenue += player['gold'] * randint(prices['gold'][0], prices['gold'][1])
+    if copper or silver or gold:
+        print(f"You sell{f" {player['copper']} copper ore" if copper else ""}{" and" if copper and (silver or gold) else ""}{f" {player['silver']} silver ore" if silver else ""}{" and" if silver and gold else ""}{f" {player['gold']} gold ore" if gold else ""} for {revenue} GP.")
+        player['copper'], player['silver'], player['gold'] = 0, 0, 0
+        player['GP'] += revenue
+        print(f"You now have {player['GP']} GP!")
+    else:
+        print("You have nothing to sell...")
+    
+
 def mine_ore(ore_type):
     x,y = player['x'], player['y']
     mined = randint(pieces[mineral_names[ore_type]][0], pieces[mineral_names[ore_type]][1])
@@ -231,13 +268,15 @@ def mine_ore(ore_type):
     game_map[y][x] = ' '
 
 def enter_mine():
+    player['enteredMine'] = True
+    player['nextDay'] = True
     if player['portalPosition'] != [0, 0]:
         player['x'], player['y'] = player['portalPosition']
     else:
         player['x'], player['y'] = 0, 0
 
     player['turns'] = TURNS_PER_DAY
-    while True:
+    while player['turns'] > 0:
         print(f"DAY {player['day']}")
         draw_view(fog, player)
         print(f"Turns left: {player['turns']} Load: {player['copper'] + player['silver'] + player['gold']} / {player['backpack']} Steps: {player['steps']}")
@@ -254,13 +293,13 @@ def enter_mine():
         elif action == "i":
             show_information(player)
         elif action == "p":
-            # Portal logic here
-            pass
+            enter_portal(player)
         elif action in "wasd":
             if action == "w" and player['y'] > 0:
                 ore = check_ore('up')
                 if ore != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
                     print('Your backpack is full')
+                    continue
                 else:
                     move_player('up')
                     if ore in mineral_names:
@@ -269,6 +308,7 @@ def enter_mine():
                 ore = check_ore('down')
                 if ore != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
                     print('Your backpack is full')
+                    continue
                 else:
                     move_player('down')
                     if ore in mineral_names:
@@ -277,6 +317,7 @@ def enter_mine():
                 ore = check_ore('left')
                 if ore != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
                     print('Your backpack is full')
+                    continue
                 else:
                     move_player('left')
                     if ore in mineral_names:
@@ -285,14 +326,36 @@ def enter_mine():
                 ore = check_ore('right')
                 if ore != True and player['copper'] + player['silver'] + player['gold'] == player['backpack']:
                     print('Your backpack is full')
+                    continue
                 else:
                     move_player('right')
                     if ore in mineral_names:
                         mine_ore(ore)
             else:
                 print("You can't move in that direction.")
+                continue
+            player['turns'] -= 1
+            player['steps'] += 1
+            if game_map[player['y']][player['x']] == 'T':
+                enter_town()
         else:
             print("Invalid action.")
+
+def show_player_information(player):
+    print()
+    print("--- Player Information ---")
+    print(f"Name: {player['name']}")
+    print(f"Current position: ({player['x']}, {player['y']})")
+    print(f"Pickaxe level: {player['pickaxe']} ({pickaxe_level(player['pickaxe'])})")
+    print(f"Gold: {player['gold']}")
+    print(f"Silver: {player['silver']}")
+    print(f"Bronze: {player['bronze']}")
+    print("---------------------------")
+    print(f"Load: {(player['copper'] + player['silver'] + player['gold'])} / {player['backpack']}")
+    print("---------------------------")
+    print(f"GP: {player['GP']}")
+    print(f"Steps taken: {player['steps']}")
+    print("---------------------------")
 
 def show_main_menu():
     print()
@@ -304,16 +367,39 @@ def show_main_menu():
     print("------------------")
 
 def show_town_menu():
-    print()
-    print(f"DAY {player['day']}")
-    print("----- Sundrop Town -----")
-    print("(B)uy stuff")
-    print("See Player (I)nformation")
-    print("See Mine (M)ap")
-    print("(E)nter mine")
-    print("Sa(V)e game")
-    print("(Q)uit to main menu")
-    print("------------------------")
+    while True:
+        print()
+        print(f"DAY {player['day']}")
+        print("----- Sundrop Town -----")
+        print("(B)uy stuff")
+        print("See Player (I)nformation")
+        print("See Mine (M)ap")
+        print("(E)nter mine")
+        print("Sa(V)e game")
+        print("(Q)uit to main menu")
+        print("------------------------")
+        choice = input("Your choice? ")
+        if choice.lower() == "b":
+            while True:
+                show_buy_menu()
+                choice = input("Your choice? ")
+                if choice.lower() == "b":
+                    upgrade_backpack()
+                elif choice.lower() == "p":
+                    upgrade_pickaxe()
+                elif choice.lower() == "l":
+                    break
+        if choice.lower() == "i":
+            show_information(player)
+        if choice.lower() == "m":
+            draw_map(fog, player)
+        if choice.lower() == "e":
+            print("---------------------------------------------------")
+            print(f"{f'DAY {player['day']}':^51}")
+            print("---------------------------------------------------")
+            enter_mine()
+        if choice.lower() == "money":
+            player['GP'] += 300
 
 def show_buy_menu():
     print("----------------------- Shop Menu -------------------------")
@@ -343,32 +429,4 @@ if choice.lower() == "n":
     player['name'] = input("Greetings, miner! What is your name? ")
     print(f"Pleased to meet you, {player['name']}, Welcome to Sundrop Town!")
     print()
-    while True:
-        if player['nextDay'] == True:
-            player['nextDay'] = False
-            player['day'] += 1
-        show_town_menu()
-        choice = input("Your choice? ")
-        if choice.lower() == "b":
-            while True:
-                show_buy_menu()
-                choice = input("Your choice? ")
-                if choice.lower() == "b":
-                    upgrade_backpack()
-                elif choice.lower() == "p":
-                    upgrade_pickaxe()
-                elif choice.lower() == "l":
-                    break
-            #todo
-        if choice.lower() == "i":
-            show_information(player)
-            #todo
-        if choice.lower() == "m":
-            draw_map(fog, player)
-        if choice.lower() == "e":
-            print("---------------------------------------------------")
-            print(f"{f'DAY {player['day']}':^51}")
-            print("---------------------------------------------------")
-            enter_mine()
-        if choice.lower() == "money":
-            player['GP'] += 300
+    enter_town()
